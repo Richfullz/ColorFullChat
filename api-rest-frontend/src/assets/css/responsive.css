@@ -1,0 +1,115 @@
+@media (max-width: 1365px) {
+  .layout {
+    display: grid;
+    grid-template-areas:
+      "nav nav"
+      "content content"
+      "aside aside";
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem; /* Agregado espacio entre columnas */
+  }
+
+  .aside__container {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem; /* Espacio entre elementos */
+  }
+
+  .layout__aside {
+    margin-left: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .aside__profile-info {
+    margin-right: 2rem;
+  }
+}
+
+@media (max-width: 845px) {
+  .aside__profile-info {
+    width: 100%;
+    margin-right: 0; /* Remover margen para mejor ajuste */
+  }
+
+  .profile-info__general-info,
+  .profile-info__stats {
+    justify-content: center;
+  }
+
+  .aside__container {
+    flex-direction: column;
+    gap: 1rem; /* Espaciado vertical */
+  }
+}
+
+@media (max-width: 690px) {
+  .layout {
+    grid-template-rows: auto auto auto;
+    gap: 1rem; /* Espacio entre filas */
+  }
+
+  .layout__navbar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: auto;
+    padding: 1rem;
+  }
+
+  .navbar__title {
+    display: block;
+    margin-bottom: 0.5rem; /* Separación del título */
+  }
+
+  .navbar__container-lists {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 0.5rem;
+  }
+
+  .container-lists__menu-list,
+  .container-lists__list-end {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container-lists__list-end {
+    align-items: flex-start;
+    margin-top: 5rem;
+  }
+
+  .menu-list__item {
+    width: 100%;
+  }
+
+  .menu-list__link,
+  .list-end__link,
+  .list-end__link-image {
+    display: block;
+    width: 100%;
+  }
+
+  .list-end__link-image {
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 447px) {
+  .profile-info__stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .stats__following:first-child {
+    padding: 0;
+  }
+
+  .stats__following {
+    padding: 0;
+    border-right: none;
+  }
+}

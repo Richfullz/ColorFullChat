@@ -24,8 +24,7 @@ export const Routing = () => (
             <Routes>
                 <Route path="/" element={<PublicLayout />}>
                     {/* Ruta por defecto dentro del layout, muestra Login */}
-                    <Route path="/portada" element={<Portada />} />
-                    <Route index element={<Login />} />
+                    <Route index path="/portada" element={<Portada />} />
                     <Route path="login" element={<Login />} />
                     <Route path="registro" element={<Register />} />
                     {/* Redirección por si no coincide ninguna ruta */}

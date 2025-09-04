@@ -69,18 +69,57 @@ body {
     color: var(--color-general-text);
   overflow-x: hidden;
 }
+
 /* Portada */
 .portada-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  padding: 2rem;
-  align-items: center;
-  min-height: 80vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 2rem;
+    height: 92.6vh;
+    width: 149rem;
+    place-items: center;
+    text-align: center;
+    background: url(/src/assets/img/portada.jpg);
+    background-size: cover;
 }
 
 .contenido-izquierda {
   max-width: 500px;
+}
+.titulo-portada{
+font-size:25px;
+font-weight:700;
+letter-spacing:1px;
+}
+.rainbow-text {
+  background: linear-gradient(
+    90deg,
+    red,
+    orange,
+    yellow,
+    green,
+    blue,
+    indigo,
+    violet
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+
+.texto-social{
+font-size:15px;
+font-weight:500;
+letter-spacing:1px;
+}
+
+.contenido-derecha {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 header h1 {
@@ -95,9 +134,9 @@ header p {
 }
 
 .acciones {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 3rem;
+    display: flex;
+    gap: 1rem;
+    margin: 3rem 10rem;
 }
 
 .btn {
@@ -162,24 +201,8 @@ header p {
 }
 
 .imagen-portada {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Responsive para dispositivos móviles */
-@media(max-width: 768px) {
-  .portada-grid {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .caracteristicas {
-    grid-template-columns: 1fr;
-  }
-
-  .acciones {
-    justify-content: center;
-  }
+    width: 50rem;
+    border-radius: 50%;
 }
 
 /* ALERTA GENERAL */
@@ -723,7 +746,7 @@ text-shadow:1px 1px 1px #000;
 /*ESTILOS DE CONTENIDO*/
 .layout__content{
     grid-area: content;
-    padding: 0 1.5rem;
+    margin: -2rem auto;
 }
 
 .content__login{
@@ -737,7 +760,7 @@ text-shadow:1px 1px 1px #000;
     display: flex;
     flex-direction: row;
     align-items: center;
-   
+        margin: 3rem 0rem;
 }
 
 .content__title, .aside__title{
@@ -886,7 +909,7 @@ text-shadow:1px 1px 1px #000;
 /*ESTILOS BARRA LATERAL*/
 .layout__aside {
     grid-area: aside;
-    margin: 8rem 96rem;
+    margin: 6rem 96rem;
     position: absolute;
     
 }
@@ -896,12 +919,11 @@ text-shadow:1px 1px 1px #000;
     
 }
 
-.aside__profile-info{
-    border: 1px solid var(--color-border-post);
-    background:#A8D7FF;
-    border:1px groove #000;
+.aside__profile-info {
+    background: #A8D7FF;
+    border: 1px groove #000;
     padding: 2.5rem;
-    margin-bottom: 2rem;
+    margin: 3rem 0rem;
     border-radius: 0.4rem;
 }
 

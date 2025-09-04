@@ -1,14 +1,18 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-
+import ilustracion from '../../assets/img/ilustracion.png';
 export const Portada = () => {
     return (
         <div className="portada-grid">
             {/* Columna izquierda: texto y botones */}
             <div className="contenido-izquierda">
                 <header>
-                    <h1>Bienvenido a ColorFullchat</h1>
-                    <p>Conecta, comparte y vive nuevas experiencias.</p>
+                    <h1 className="titulo-portada">
+                        Bienvenido a{' '}
+                        <span className="rainbow-text">ColorFullchat</span>
+                    </h1>
+
+                    <p className='texto-social'>Conecta, comparte y vive nuevas experiencias.</p>
                 </header>
                 <div className="acciones">
                     <Link to="/login" className="btn btn-login">Iniciar sesión</Link>
@@ -41,7 +45,7 @@ export const Portada = () => {
             {/* Columna derecha: imagen o ilustración */}
             <div className="contenido-derecha">
                 <img
-                    src="/images/chat-illustration.svg"
+                    src={ilustracion}
                     alt="Ilustración Chat ColorFullchat"
                     className="imagen-portada"
                 />

@@ -16,6 +16,7 @@ import { Events } from "../components/user/Events";
 import { Following } from "../components/follow/Following";
 import { Followers } from "../components/follow/Followers";
 import { Profile } from "../components/user/Profile";
+import { Portada } from "../components/user/Portada";
 
 export const Routing = () => (
     <BrowserRouter>
@@ -23,6 +24,7 @@ export const Routing = () => (
             <Routes>
                 <Route path="/" element={<PublicLayout />}>
                     {/* Ruta por defecto dentro del layout, muestra Login */}
+                    <Route path="/portada" element={<Portada />} />
                     <Route index element={<Login />} />
                     <Route path="login" element={<Login />} />
                     <Route path="registro" element={<Register />} />

@@ -56,20 +56,22 @@ export const Following = () => {
     };
     return (
         <div>
-            <header className="content__header">
-                <h1 className="content__title">Usuarios que sigue {userProfile.nick}</h1>
-            </header>
+            <div className='following-style'>
+                <header className="content__header">
+                    <h1 className="content__title">Usuarios que sigue {userProfile.nick}</h1>
+                </header>
 
-            <UserList
-                users={users}
-                getUsers={getUsers}
-                following={following}
-                setFollowing={setFollowing}
-                more={more}
-                loading={loading}
-                page={page}
-                setPage={setPage}
-            />
+                <UserList
+                    users={users}
+                    getUsers={getUsers}
+                    following={following}
+                    setFollowing={setFollowing}
+                    more={more}
+                    loading={loading}
+                    page={page}
+                    setPage={setPage}
+                />
+            </div>
         </div>
     );
 };

@@ -133,8 +133,8 @@ export const Profile = () => {
 
 
     return (
-        <div>
-            <header className="aside__profile-info">
+        <div className='style-profile'>
+            <header className="aside__profile-info-profile">
                 <div className="profile-info__general-info">
                     <div className="general-info__container-avatar">
                         {user.image && user.image !== "default.png" ? (

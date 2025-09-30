@@ -64,24 +64,25 @@ export const Feed = () => {
 
     return (
         <>
-            <header className="content__header">
-                <h1 className="content__title">Timeline</h1>
-                {/* Aquí el botón puede servir para recargar o verificar nuevas publicaciones */}
-                <button className="content__button" onClick={() => getPublications(1, true)}>Mostrar nuevas</button>
-            </header>
+            <div className='styles-feed'>
+                <header className="timeline__header">
+                    <h1 className="timeline__title">Timeline</h1>
+                    <button className="timeline__button" onClick={() => getPublications(1, true)}>Mostrar nuevas</button>
+                </header>
 
-            <PublicationList
-                publications={publications}
-                setPublications={setPublications}
-                getPublications={getPublications}
-                page={page}
-                setPage={setPage}
-                more={more}
-                setMore={setMore}
-                counters={counters}
-                setCounters={setCounters}
-                loadMore={loadMore}
-            />
+                <PublicationList
+                    publications={publications}
+                    setPublications={setPublications}
+                    getPublications={getPublications}
+                    page={page}
+                    setPage={setPage}
+                    more={more}
+                    setMore={setMore}
+                    counters={counters}
+                    setCounters={setCounters}
+                    loadMore={loadMore}
+                />
+            </div>
         </>
     );
 };

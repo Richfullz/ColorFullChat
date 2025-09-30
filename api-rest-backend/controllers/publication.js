@@ -3,7 +3,7 @@ const path = require("path");
 
 // Importar modelos
 const Publication = require("../models/publication");
-
+const User = require("../models/user")
 // Importar servicios
 const followService = require("../services/followService");
 
@@ -82,34 +82,44 @@ const remove = async (req, res) => {
 // listar publicaciones de un usuario
 const user = async (req, res) => {
     const userId = req.params.id;
-    let page = 1;
-    if (req.params.page) page = parseInt(req.params.page);
+    let page = parseInt(req.params.page) || 1;
     const itemsPerPage = 5;
 
     try {
+        const profileUser = await User.findById(userId);
+        if (!profileUser) {
+            return res.status(404).send({ status: "error", message: "Usuario no encontrado" });
+        }
+
+        // Permitir siempre a ti mismo ver tus publicaciones
+        if (userId !== req.user.id) {
+            const followInfo = await followService.followThisUser(req.user.id, userId);
+
+            // Validación de privacidad solo para otros usuarios
+            if (profileUser.private && (!followInfo.following || !followInfo.follower)) {
+                return res.status(403).send({
+                    status: "error",
+                    message: "Este usuario es privado."
+                });
+            }
+        }
+
         const publications = await Publication.find({ user: userId })
             .sort("-created_at")
             .populate("user", "-password -__v -role -email")
             .skip((page - 1) * itemsPerPage)
             .limit(itemsPerPage);
 
-        if (!publications || publications.length === 0) {
-            return res.status(404).send({
-                status: "error",
-                message: "No hay publicaciones para mostrar"
-            });
-        }
-
         const total = await Publication.countDocuments({ user: userId });
 
         return res.status(200).send({
             status: "success",
-            message: "Publicaciones del perfil de un usuario",
+            publications,
             page,
             total,
-            pages: Math.ceil(total / itemsPerPage),
-            publications
+            pages: Math.ceil(total / itemsPerPage)
         });
+
     } catch (error) {
         return res.status(500).send({
             status: "error",
@@ -117,7 +127,9 @@ const user = async (req, res) => {
             error: error.message
         });
     }
-}
+};
+
+
 
 // Subir ficheros
 const upload = async (req, res) => {
@@ -186,39 +198,42 @@ const media = (req, res) => {
 
 
 // Listar todas las publicaciones (FEED)
+// Listar todas las publicaciones (FEED)
 const feed = async (req, res) => {
-    let page = 1;
-    if (req.params.page) {
-        page = req.params.page;
-    }
-    let itemsPerPage = 5;
+    let page = parseInt(req.params.page) || 1;
+    const itemsPerPage = 5;
 
     try {
+        // Obtener los IDs de los usuarios que sigo y los que me siguen
         const myFollows = await followService.followUserIds(req.user.id);
-        const publications = await Publication.find({ user: { $in: myFollows.following } })
+        const followingIds = myFollows.following.map(id => id.toString());
+        const followersIds = myFollows.followers.map(id => id.toString());
+
+        // Traer publicaciones de los usuarios que sigo
+        let publications = await Publication.find({ user: { $in: followingIds } })
             .populate("user", "-password -role -__v -email")
             .sort("-created_at")
             .skip((page - 1) * itemsPerPage)
             .limit(itemsPerPage);
 
-        if (!publications || publications.length === 0) {
-            return res.status(404).send({
-                status: "error",
-                message: "No hay publicaciones para mostrar"
-            });
-        }
+        // Filtrar publicaciones de usuarios privados que no tengan seguimiento mutuo
+        publications = publications.filter(pub => {
+            const userId = pub.user._id.toString();
+            if (!pub.user.private) return true; // siempre mostrar usuarios públicos
+            return followingIds.includes(userId) && followersIds.includes(userId); // solo mutuo seguimiento
+        });
 
-        const total = await Publication.countDocuments({ user: { $in: myFollows.following } });
+        // Contar total de publicaciones de los usuarios que sigo (para paginación)
+        const total = await Publication.countDocuments({ user: { $in: followingIds } });
 
         return res.status(200).send({
             status: "success",
-            message: "Feed de publicaciones",
-            following: myFollows.following,
-            total,
+            publications,
             page,
-            pages: Math.ceil(total / itemsPerPage),
-            publications
+            total,
+            pages: Math.ceil(total / itemsPerPage)
         });
+
     } catch (error) {
         return res.status(500).send({
             status: "error",
@@ -226,7 +241,7 @@ const feed = async (req, res) => {
             error: error.message
         });
     }
-}
+};
 
 module.exports = {
     pruebaPublication,

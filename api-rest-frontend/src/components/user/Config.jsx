@@ -1,134 +1,119 @@
-import React, { useState } from 'react'
-import useAuth from '../../hooks/useAuth'
-import { Global } from '../../helpers/Global';
-import { SerializeForm } from '../../helpers/SerializeForm';
-import avatar from "../../assets/img/user.png"
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Global } from "../../helpers/Global";
 
 export const Config = () => {
-    const { auth, setAuth } = useAuth();
-    const [saved, setSaved] = useState("not_saved");
+    const navigate = useNavigate();
+    const [cards, setCards] = useState([]);
+    const [userRole, setUserRole] = useState(null);
 
-    const updateUser = async (e) => {
-        e.preventDefault();
-        const token = localStorage.getItem("token");
-        const newDataUser = SerializeForm(e.target);
-        delete newDataUser.file0;
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const storedUser = JSON.parse(localStorage.getItem("user"));
+                if (!storedUser) throw new Error("No hay usuario logueado");
 
-        const request = await fetch(Global.url + "user/update", {
-            method: "PUT",
-            body: JSON.stringify(newDataUser),
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": token
-            }
-        });
-        const data = await request.json();
+                const userId = storedUser.id;
+                const token = localStorage.getItem("token");
 
-        if (data.status === "success" && data.user) {
-            delete data.user.password;
-            setAuth(data.user);
-            setSaved("saved");
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            setSaved("error");
-            setTimeout(() => window.location.reload(), 1000);
-        }
+                const res = await fetch(Global.url + "user/profile/" + userId, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": token
+                    }
+                });
 
-        // subida de imagen
-        const fileInput = document.querySelector("#file");
-        if (data.status === "success" && fileInput.files[0]) {
-            const formData = new FormData();
-            formData.append('file0', fileInput.files[0]);
-            const uploadRequest = await fetch(Global.url + "user/upload", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "Authorization": token
+                const data = await res.json();
+                if (data.status !== "success") throw new Error("Error al cargar usuario");
+
+                const user = data.user;
+                setUserRole(user.role);
+
+                // Tarjetas base (para todos los usuarios)
+                const userCards = [
+                    {
+                        title: "Cambiar Perfil",
+                        description: "Personaliza tu perfil: cambia tu nombre, apellidos, nick y biografía, y sube un avatar que te represente.",
+                        route: "/social/configProfile",
+                        color: "#0d00ff",
+                        bgGradient: "linear-gradient(135deg, #a29dff, #a8a0ff)"
+                    },
+                    {
+                        title: "Detalles / Privacidad",
+                        description: "Controla quién puede ver tu Perfil. Configura tu privacidad de forma rápida y segura.",
+                        route: "/social/privacidad",
+                        color: "#ff0000",
+                        bgGradient: "linear-gradient(135deg, #ff6b6b, #ff9999)"
+                    }
+                ];
+
+                // Tarjetas extra si es admin
+                if (user.role === 1) {
+                    userCards.push(
+                        {
+                            title: "Listado de Usuarios",
+                            description: "Visualiza todos los usuarios registrados y gestiona baneos, desbaneos y eliminaciones.",
+                            route: "/social/listSettings",
+                            color: "#129a43",
+                            bgGradient: "linear-gradient(135deg, #01ff4d, #00b894)"
+                        },
+                        {
+                            title: "Auditoría",
+                            description: "Revisa los registros de acciones administrativas: baneos, desbaneos, usuarios eliminados.",
+                            route: "/social/audit",
+                            color: "#ffb700",
+                            bgGradient: "linear-gradient(135deg, #ff9f43, #ffb142)"
+                        },
+                        {
+                            title: "ReportInbox",
+                            description: "Revisa el buzón de denuncias enviadas por los usuarios y gestiona su estado.",
+                            route: "/social/reportInbox",
+                            color: "#8e44ad",
+                            bgGradient: "linear-gradient(135deg, #c39bd3, #8e44ad)"
+                        }
+                    );
                 }
-            });
-            const uploadData = await uploadRequest.json();
 
-            if (uploadData.status === "success" && uploadData.user) {
-                delete uploadData.user.password;
-                setAuth(uploadData.user);
-                setSaved("saved");
-            } else {
-                setSaved("error");
+                setCards(userCards);
+
+            } catch (error) {
+                console.error("Error al cargar usuario:", error);
             }
-        }
-    };
+        };
+
+        fetchUser();
+    }, []);
+
+    if (userRole === null) {
+        return <p className="loading">Cargando...</p>;
+    }
 
     return (
-        <>
-            <div className="settings-background">
-                <header className="settings-header">
-                    <h1 className="settings-title">Ajustes</h1>
-                </header>
+        <div className={userRole === 1 ? "settings-background-adm" : "settings-background"}>
+            <header className="settings-header">
+                <h1 className={userRole === 1 ? "settings-title-adm" : "settings-title"}>Ajustes</h1>
+            </header>
 
-                <div className="settings-container">
-                    {saved === "saved" && <strong className="message-config message-success">Usuario Actualizado</strong>}
-                    {saved === "error" && <strong className="message-config message-danger">Algo no funcionó correctamente</strong>}
-
-                    <form className="settings-form" onSubmit={updateUser}>
-                        <div className="form-field">
-                            <label htmlFor="name">Nombre</label>
-                            <input type="text" name="name" defaultValue={auth.name} />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="surname">Apellidos</label>
-                            <input type="text" name="surname" defaultValue={auth.surname} />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="nick">Nick</label>
-                            <input type="text" name="nick" defaultValue={auth.nick} />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="bio">Biografía</label>
-                            <textarea name="bio" defaultValue={auth.bio} />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="email">Email</label>
-                            <input type="text" name="email" defaultValue={auth.email} />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="password">Contraseña</label>
-                            <input type="password" name="password" />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="file0">Avatar</label>
-                            <div className="avatar-preview">
-                                {auth.image && auth.image !== "default.png"
-                                    ? (
-                                        <img
-                                            src={Global.url + "user/avatar/" + auth.image}
-                                            className="avatar-img"
-                                            alt="Foto de perfil"
-                                        />
-                                    )
-                                    : (
-                                        <img
-                                            src={avatar}
-                                            className="avatar-img"
-                                            alt="Foto de perfil"
-                                        />
-                                    )
-                                }
-                            </div>
-                            <br />
-                            <input type="file" name="file0" id="file" />
-                        </div>
-
-                        <br />
-                        <input type="submit" value="Actualizar datos" className="btn-success" />
-                    </form>
-                </div>
+            <div className="settings-cards-container">
+                {cards.map((card, index) => (
+                    <div
+                        key={index}
+                        className="settings-card"
+                        style={{ borderColor: card.color, background: card.bgGradient }}
+                    >
+                        <h2 className="card-title">{card.title}</h2>
+                        <p className="card-description">{card.description}</p>
+                        <button
+                            className="card-button"
+                            style={{ backgroundColor: card.color, color: "#fff" }}
+                            onClick={() => navigate(card.route)}
+                        >
+                            Ir a {card.title}
+                        </button>
+                    </div>
+                ))}
             </div>
-        </>
+        </div>
     );
 };

@@ -3,15 +3,15 @@ import { Nav } from './Nav'
 
 export const Header = () => {
   return (
-     <header className="layout__navbar">
+    <header className="layout__navbar">
 
-            <div className="navbar__header">
-                <a href="#" className="navbar__title">ColorFullChat</a>
-            </div>
+      <div className="navbar__header">
+        <a href="/social" className="navbar__title">ColorFullChat</a>
+      </div>
 
-           <Nav/>
+      <Nav />
 
-        </header>
+    </header>
   )
 }
 

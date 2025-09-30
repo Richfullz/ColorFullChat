@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hcaptcha/react-hcaptcha": "^1.12.1",
+    "axios": "^1.12.1",
     "javascript-time-ago": "^2.5.11",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.8.2",
-    "react-time-ago": "^7.3.3"
+    "react-time-ago": "^7.3.3",
+    "sweetalert2": "^11.23.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",

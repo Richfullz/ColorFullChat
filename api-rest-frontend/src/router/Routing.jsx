@@ -17,16 +17,29 @@ import { Following } from "../components/follow/Following";
 import { Followers } from "../components/follow/Followers";
 import { Profile } from "../components/user/Profile";
 import { Portada } from "../components/user/Portada";
+import Forgot from "../components/resetPassword/Forgot";
+import Reset from "../components/resetPassword/Reset";
+import Privacidad from "../components/user/Privacidad";
+import { ConfigProfile } from "../components/user/ConfigProfile";
+import ListSettings from "../components/user/ListSettings";
+import Audit from "../components/user/Audit";
+import { ReportForm } from "../components/layout/public/ReportForm";
+import ReportInbox from "../components/user/ReportInbox";
+import { Box } from "../components/user/Box";
 
 export const Routing = () => (
     <BrowserRouter>
         <AuthProvider>
             <Routes>
                 <Route path="/" element={<PublicLayout />}>
-                    {/* Ruta por defecto dentro del layout, muestra Login */}
-                    <Route index path="/portada" element={<Portada />} />
+                    {/* Ruta por defecto dentro del layout, muestra Portada */}
+                    <Route index element={<Navigate to="portada" replace />} />
+                    <Route index path="portada" element={<Portada />} />
                     <Route path="login" element={<Login />} />
                     <Route path="registro" element={<Register />} />
+                    <Route path="/report" element={<ReportForm />} />
+                    <Route path="forgot-password" element={<Forgot />} />
+                    <Route path="reset-password/:token" element={<Reset />} />
                     {/* Redirección por si no coincide ninguna ruta */}
                     {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
                 </Route>
@@ -36,10 +49,16 @@ export const Routing = () => (
                     <Route path="logout" element={<Logout />} />
                     <Route path="gente" element={<People />} />
                     <Route path="ajustes" element={<Config />} />
+                    <Route path="privacidad" element={<Privacidad />} />
+                    <Route path="configProfile" element={<ConfigProfile />} />
+                    <Route path="listSettings" element={<ListSettings />} />
+                    <Route path="audit" element={<Audit />} />
                     <Route path="siguiendo/:userId" element={<Following />} />
                     <Route path="seguidores/:userId" element={<Followers />} />
                     <Route path="perfil/:userId" element={<Profile />} />
+                    <Route path="reportInbox" element={<ReportInbox />} />
                     {/* extras */}
+                    <Route path="box" element={<Box />} />
                     <Route path="chat" element={<Chat />} />
                     <Route path="music" element={<Music />} />
                     <Route path="citas" element={<Citas />} />

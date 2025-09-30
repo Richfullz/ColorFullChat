@@ -1,4 +1,4 @@
-const {Schema, model} = require("mongoose");
+const { Schema, model } = require("mongoose");
 
 const FollowSchema = Schema({
     user: {
@@ -9,6 +9,7 @@ const FollowSchema = Schema({
         type: Schema.ObjectId,
         ref: "User"
     },
+    read: { type: Boolean, default: false },
     created_at: {
         type: Date,
         default: Date.now

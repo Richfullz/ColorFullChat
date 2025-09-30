@@ -20,7 +20,13 @@ const validate = require("../helpers/validate");
 const register = async (req, res) => {
     try {
         const params = req.body;
-
+        // ✅ NUEVO: Validar role
+        if (typeof params.role !== "undefined") {
+            params.role = parseInt(params.role);
+            if (![0, 1].includes(params.role)) params.role = 0; // default user
+        } else {
+            params.role = 0; // usuario por defecto
+        }
         if (!params.name || !params.email || !params.password || !params.nick) {
             return res.status(400).json({ status: "error", message: "Faltan datos por enviar" });
         }
@@ -78,13 +84,21 @@ const login = async (req, res) => {
         const validPwd = await bcrypt.compare(params.password, user.password);
         if (!validPwd) return res.status(400).json({ status: "error", message: "Credenciales incorrectas" });
 
+        // ✅ Bloquear login si está baneado
+        if (user.banned) {
+            return res.status(403).json({
+                status: "banned",
+                message: "Tu cuenta ha sido baneada."
+            });
+        }
+
         // Crear token
         const token = jwt.createToken(user);
 
         return res.status(200).json({
             status: "success",
             message: "Login correcto",
-            user: { id: user._id, name: user.name, nick: user.nick },
+            user: { id: user._id, name: user.name, nick: user.nick, banned: user.banned },
             token
         });
 
@@ -97,27 +111,27 @@ const login = async (req, res) => {
 // Perfil
 const profile = async (req, res) => {
     try {
-        const id = req.params.id.trim();
-        const userProfile = await User.findById(id).select("-password -role");
+        const userId = req.params.id;
 
+        const userProfile = await User.findById(userId).select("-password");
         if (!userProfile) {
-            return res.status(404).json({ status: "error", message: "El usuario no existe" });
+            return res.status(404).json({
+                status: "error",
+                message: "Usuario no encontrado"
+            });
         }
-
-        const followInfo = await followService.followThisUser(req.user.id, id);
 
         return res.status(200).json({
             status: "success",
-            user: userProfile,
-            following: followInfo.following,
-            follower: followInfo.follower
+            user: userProfile
         });
-
     } catch (error) {
-        return res.status(500).json({ status: "error", message: "Error al buscar perfil", error });
+        return res.status(500).json({
+            status: "error",
+            message: "Error al obtener el perfil"
+        });
     }
 };
-
 
 // Listado de usuarios con paginación
 const list = async (req, res) => {
@@ -125,6 +139,7 @@ const list = async (req, res) => {
         let page = parseInt(req.params.page) || 1;
         let itemsPerPage = 5;
 
+        // Traer todos los usuarios, sin filtrar private
         const total = await User.countDocuments();
         const users = await User.find()
             .select("-password -email -role -__v")
@@ -132,10 +147,11 @@ const list = async (req, res) => {
             .skip((page - 1) * itemsPerPage)
             .limit(itemsPerPage);
 
-        if (!users) {
+        if (!users || users.length === 0) {
             return res.status(404).json({ status: "error", message: "No hay usuarios disponibles" });
         }
 
+        // Info de seguimiento del usuario logueado
         const followUserIds = await followService.followUserIds(req.user.id);
 
         return res.status(200).json({
@@ -155,69 +171,59 @@ const list = async (req, res) => {
 };
 
 
+
 // Actualizar usuario
 const update = async (req, res) => {
     try {
         let userIdentity = req.user;
         let userToUpdate = req.body;
 
-        delete userToUpdate.iat;
-        delete userToUpdate.exp;
-        delete userToUpdate.role;
-        delete userToUpdate.image;
+        // Evitar que un usuario normal cambie su role
+        if (userIdentity.role !== 1) {
+            delete userToUpdate.role;
+        }
 
-        // Comprobar usuarios duplicados
-        let users = await User.find({
-            $or: [
-                { email: userToUpdate.email?.toLowerCase() },
-                { nick: userToUpdate.nick?.toLowerCase() }
-            ]
+        const userUpdated = await User.findByIdAndUpdate(
+            userIdentity.id,
+            userToUpdate,
+            { new: true, select: "-password" }
+        );
+
+        if (!userUpdated) {
+            return res.status(404).json({
+                status: "error",
+                message: "No se encontró el usuario"
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: "Usuario actualizado correctamente",
+            user: userUpdated
         });
-
-        let userIsset = users.some(user => user && user._id.toString() !== userIdentity.id);
-        if (userIsset) {
-            return res.status(400).json({ status: "error", message: "El usuario ya existe" });
-        }
-
-        // Si me envía nueva contraseña, la cifro
-        if (userToUpdate.password) {
-            userToUpdate.password = await bcrypt.hash(userToUpdate.password, 10);
-        } else {
-            delete userToUpdate.password;
-        }
-
-        // Actualizar
-        const userUpdated = await User.findByIdAndUpdate(userIdentity.id, userToUpdate, { new: true, select: "-password -role" });
-        if (!userUpdated) return res.status(400).json({ status: "error", message: "Error al actualizar" });
-
-        return res.status(200).json({ status: "success", user: userUpdated });
-
     } catch (error) {
-        return res.status(500).json({ status: "error", message: "Error al actualizar", error });
+        return res.status(500).json({
+            status: "error",
+            message: "Error al actualizar usuario",
+            error: error.message
+        });
     }
 };
 
-
 // Subir avatar
 const upload = async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ status: "error", message: "No has subido ninguna imagen" });
-    }
-
-    const filePath = req.file.path;
-    const fileName = req.file.originalname;
-    const extension = path.extname(fileName).toLowerCase().replace(".", "");
-
-    if (!["png", "jpg", "jpeg", "gif"].includes(extension)) {
-        fs.unlinkSync(filePath);
-        return res.status(400).json({ status: "error", message: "Extensión no válida" });
-    }
-
     try {
+        if (!req.file) {
+            return res.status(400).json({
+                status: "error",
+                message: "La petición no incluye imagen"
+            });
+        }
+
         const userUpdated = await User.findByIdAndUpdate(
             req.user.id,
             { image: req.file.filename },
-            { new: true, select: "-password -role" }
+            { new: true, select: "-password" }
         );
 
         return res.status(200).json({
@@ -225,12 +231,13 @@ const upload = async (req, res) => {
             user: userUpdated,
             file: req.file
         });
-
     } catch (error) {
-        return res.status(500).json({ status: "error", message: "Error en la subida del avatar", error });
+        return res.status(500).json({
+            status: "error",
+            message: "Error al subir avatar"
+        });
     }
 };
-
 
 // Obtener avatar
 const avatar = (req, res) => {
@@ -263,6 +270,37 @@ const counters = async (req, res) => {
     }
 };
 
+// Eliminar usuario y sus datos asociados
+const remove = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                status: "error",
+                message: "Usuario no encontrado"
+            });
+        }
+
+        // Borrar publicaciones y follows asociados
+        await Publication.deleteMany({ user: userId });
+        await Follow.deleteMany({ $or: [{ user: userId }, { followed: userId }] });
+
+        // Eliminar usuario
+        await User.findByIdAndDelete(userId);
+
+        return res.status(200).json({
+            status: "success",
+            message: "Usuario eliminado correctamente"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            message: "Error al eliminar usuario"
+        });
+    }
+};
 
 // Exportar
 module.exports = {
@@ -273,5 +311,6 @@ module.exports = {
     update,
     upload,
     avatar,
-    counters
+    counters,
+    remove
 };

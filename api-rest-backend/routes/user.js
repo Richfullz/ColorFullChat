@@ -1,30 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const UserContoller = require("../controllers/user");
-const check = require("../middlewares/auth");
+const UserController = require("../controllers/user");
+const { auth, isNotBanned } = require("../middlewares/auth");
+const bannedMiddleware = require("../middlewares/banned");
 
-// Configuracion de subida
+// Configuración multer para avatars
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "./uploads/avatars/")
-    },
-    filename: (req, file, cb) => {
-        cb(null, "avatar-" + Date.now() + "-" + file.originalname);
-    }
+    destination: (req, file, cb) => cb(null, "./uploads/avatars/"),
+    filename: (req, file, cb) => cb(null, "avatar-" + Date.now() + "-" + file.originalname)
 });
-
 const uploads = multer({ storage });
 
-// Definir rutas
-router.post("/register", UserContoller.register);
-router.post("/login", UserContoller.login);
-router.get("/profile/:id", check.auth, UserContoller.profile);
-router.get("/list/:page", check.auth, UserContoller.list);
-router.put("/update", check.auth, UserContoller.update);
-router.post("/upload", [check.auth, uploads.single("file0")], UserContoller.upload);
-router.get("/avatar/:file", UserContoller.avatar);
-router.get("/counters/:id", check.auth, UserContoller.counters);
+// Rutas
+router.post("/register", UserController.register);
+router.post("/login", UserController.login);
+router.get("/profile/:id", auth, bannedMiddleware.isNotBanned, UserController.profile);
+router.get("/list/:page", auth, bannedMiddleware.isNotBanned, UserController.list);
+router.put("/update", auth, bannedMiddleware.isNotBanned, UserController.update);
+router.post("/upload", [auth, bannedMiddleware.isNotBanned, uploads.single("file0")], UserController.upload);
+router.get("/avatar/:file", UserController.avatar);
+router.get("/counters/:id", auth, bannedMiddleware.isNotBanned, UserController.counters);
+router.delete("/remove", auth, UserController.remove);
 
-// Exportar router
 module.exports = router;

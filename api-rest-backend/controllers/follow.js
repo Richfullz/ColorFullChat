@@ -151,9 +151,59 @@ const followers = async (req, res) => {
     }
 };
 
+// Obtener notificaciones + contador
+const notifications = async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        // Todas las notificaciones para el Box
+        const allFollows = await Follow.find({ followed: userId })
+            .populate("user", "_id name nick image")
+            .sort("-created_at");
+
+        // Contar cuántas están sin leer
+        const unreadCount = await Follow.countDocuments({ followed: userId, read: false });
+
+        return res.status(200).json({
+            status: "success",
+            notifications: allFollows,
+            unreadCount
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            message: "Error al obtener notificaciones",
+            error: error.message
+        });
+    }
+};
+
+// ✅ Nueva ruta para marcar como leídas cuando el usuario entra al Box
+const markAsRead = async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        await Follow.updateMany({ followed: userId, read: false }, { read: true });
+
+        return res.status(200).json({
+            status: "success",
+            message: "Notificaciones marcadas como leídas"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            message: "Error al marcar notificaciones como leídas",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     save,
     unfollow,
     following,
     followers,
+    notifications,
+    markAsRead
 };
+

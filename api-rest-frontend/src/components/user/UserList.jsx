@@ -27,8 +27,8 @@ export const UserList = ({ users, getUsers, following, setFollowing, loading, mo
         const data = await request.json();
 
         if (data.status === "success") {
-            setFollowing(prev => [...prev, userId]); // actualización segura con callback
-            incrementFollowing(); // incrementar contador global inmediatamente
+            setFollowing(prev => [...prev, userId]);
+            incrementFollowing();
         }
     };
 
@@ -44,8 +44,8 @@ export const UserList = ({ users, getUsers, following, setFollowing, loading, mo
         const data = await request.json();
 
         if (data.status === "success") {
-            setFollowing(prev => prev.filter(id => id !== userId)); // actualización segura con callback
-            decrementFollowing(); // decrementar contador global inmediatamente
+            setFollowing(prev => prev.filter(id => id !== userId));
+            decrementFollowing();
         }
     };
 
@@ -58,43 +58,60 @@ export const UserList = ({ users, getUsers, following, setFollowing, loading, mo
                             <div className="post__container">
                                 <div className="post__image-user">
                                     <Link to={"/social/perfil/" + user._id} className="post__image-link">
-                                        {user.image && user.image !== "default.png"
-                                            ? (
-                                                <img
-                                                    src={Global.url + "user/avatar/" + user.image}
-                                                    className="post__user-image"
-                                                    alt="Foto de perfil"
-                                                />
-                                            )
-                                            : (
-                                                <img
-                                                    src={avatar}
-                                                    className="post__user-image"
-                                                    alt="Foto de perfil"
-                                                />
-                                            )}
+                                        {user.image && user.image !== "default.png" ? (
+                                            <img
+                                                src={Global.url + "user/avatar/" + user.image}
+                                                className="post__user-image"
+                                                alt="Foto de perfil"
+                                            />
+                                        ) : (
+                                            <img
+                                                src={avatar}
+                                                className="post__user-image"
+                                                alt="Foto de perfil"
+                                            />
+                                        )}
                                     </Link>
                                 </div>
+
                                 <div className="post__body">
                                     <div className="post__user-info">
-                                        <Link to={"/social/perfil/" + user._id} className="user-info__name">{user.name}, {user.surname}</Link>
+                                        <Link to={"/social/perfil/" + user._id} className="user-info__name">
+                                            {user.name} {user.surname}
+                                        </Link>
                                         <span className="user-info__divider"> | </span>
-                                        <Link to={"/social/perfil/" + user._id} className="user-info__create-date">  <ReactTimeAgo
-                                            date={user.create_at ? new Date(user.create_at) : new Date()}
-                                            locale='es-ES'
-                                            className="user-info__create-date"
-                                        /></Link>
+                                        <Link to={"/social/perfil/" + user._id} className="user-info__create-date">
+                                            <ReactTimeAgo
+                                                date={user.create_at ? new Date(user.create_at) : new Date()}
+                                                locale='es-ES'
+                                                className="user-info__create-date"
+                                            />
+                                        </Link>
                                     </div>
+
                                     <h4 className="post__content">{user.bio}</h4>
+
+                                    {/* NUEVO: Lista de usuarios que siguen */}
+                                    {user.following_users && user.following_users.length > 0 && (
+                                        <p className="post__followers">
+                                            Le siguen:{" "}
+                                            {user.following_users.slice(0, 3).map((follower, index) => (
+                                                <span key={follower._id}>
+                                                    {follower.name}{index < Math.min(2, user.following_users.length - 1) ? ", " : ""}
+                                                </span>
+                                            ))}
+                                            {user.following_users.length > 3 ? ` y ${user.following_users.length - 3} más` : ""}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
                             {user._id !== auth._id && (
-                                <div className="post__buttons">
+                                <div>
                                     {!following.includes(user._id) ? (
-                                        <button to={"/social/perfil/" + user._id} className="post__button post__button--green" onClick={() => follow(user._id)}>Seguir</button>
+                                        <button className="post__button post__button--purple" onClick={() => follow(user._id)}>Seguir</button>
                                     ) : (
-                                        <button to={"/social/perfil/" + user._id} className="post__button" onClick={() => unfollow(user._id)}>Dejar de Seguir</button>
+                                        <button className="post__button post__button--red" onClick={() => unfollow(user._id)}>Dejar de Seguir</button>
                                     )}
                                 </div>
                             )}
@@ -102,11 +119,12 @@ export const UserList = ({ users, getUsers, following, setFollowing, loading, mo
                     ))}
                 </div>
 
-                {loading ? <div className='loading'><h1>cargando...</h1></div> : ""}
+                {loading && <div className='loading'><h1>Cargando...</h1></div>}
+
                 {more && (
                     <div className="content__container-btn">
                         <button className="content__btn-more-post" onClick={nextPage}>
-                            Ver mas Personas
+                            Ver más personas
                         </button>
                     </div>
                 )}
@@ -114,4 +132,3 @@ export const UserList = ({ users, getUsers, following, setFollowing, loading, mo
         </>
     );
 };
-

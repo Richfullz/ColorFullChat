@@ -8,7 +8,7 @@ import ReactTimeAgo from 'react-time-ago';
 export const UserList = ({ users, getUsers, following, setFollowing, loading, more, page, setPage }) => {
     const { auth, incrementFollowing, decrementFollowing } = useAuth();
 
-    // NUEVO: arrays para solicitudes pendientes
+    //Arrays para solicitudes pendientes
     const [pendingRequests, setPendingRequests] = useState([]);
     const [doublePendingRequests, setDoublePendingRequests] = useState([]);
 
@@ -47,7 +47,7 @@ export const UserList = ({ users, getUsers, following, setFollowing, loading, mo
         getUsers(next);
     };
 
-    // NUEVO: función de follow
+    //Función de follow
     const follow = async (user) => {
         const token = localStorage.getItem("token");
         try {
@@ -70,7 +70,7 @@ export const UserList = ({ users, getUsers, following, setFollowing, loading, mo
             console.error("Error:", err);
         }
     };
-
+    //Dejar de seguir
     const unfollow = async (userId) => {
         const token = localStorage.getItem("token");
         try {

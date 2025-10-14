@@ -35,7 +35,7 @@ export const People = () => {
 
     useEffect(() => {
         getUsers(1);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
     // Re-aplica el filtro cada vez que cambian users o search
@@ -65,7 +65,7 @@ export const People = () => {
                     // Actualiza filteredUsers inmediatamente (por si hay texto en search)
                     setFilteredUsers(applyFilter(updated, search));
 
-                    // Control simple de paginación usando data.total (si tu API lo proporciona)
+                    // Control simple de paginación usando data.total
                     if (typeof data.total === "number") {
                         if (updated.length >= data.total) setMore(false);
                         else setMore(true);
@@ -96,7 +96,7 @@ export const People = () => {
 
     const handleSearchChange = (e) => {
         setSearch(e.target.value);
-        // no hace falta filtrar aquí, lo hace el useEffect
+
     };
 
     return (

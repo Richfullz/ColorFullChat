@@ -10,6 +10,7 @@ export const Box = () => {
     const [sort, setSort] = useState("newest");
     const [filter, setFilter] = useState("all");
     const [loading, setLoading] = useState(true);
+
     // 🔹 Marcar todas como leídas al entrar al Box
     useEffect(() => {
         const markAllAsRead = async () => {
@@ -19,7 +20,8 @@ export const Box = () => {
                     method: "PUT",
                     headers: { Authorization: token },
                 });
-                // Hacer lo mismo para Buzzon y solicitudes si quieres
+
+
             } catch (err) {
                 console.error("Error marcando notificaciones como leídas:", err);
             }
@@ -129,13 +131,14 @@ export const Box = () => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
 
-            // Encontrar la solicitud aceptada en friendRequests
+
             const acceptedRequest = friendRequests.find(r => r._id === id);
 
             // Actualizar estado de solicitudes eliminando la aceptada/rechazada
             setFriendRequests(prev => prev.filter(r => r._id !== id));
 
             if (action === "accept" && acceptedRequest) {
+
                 // Agregar notificación instantánea tipo "follow"
                 const newFollowNotification = {
                     _id: `follow-${id}`, // ID temporal

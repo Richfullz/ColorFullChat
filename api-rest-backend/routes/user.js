@@ -22,5 +22,6 @@ router.post("/upload", [auth, bannedMiddleware.isNotBanned, uploads.single("file
 router.get("/avatar/:file", UserController.avatar);
 router.get("/counters/:id", auth, bannedMiddleware.isNotBanned, UserController.counters);
 router.delete("/remove", auth, UserController.remove);
+router.get('/search/:query', UserController.searchUsers);
 
 module.exports = router;

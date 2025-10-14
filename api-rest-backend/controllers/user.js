@@ -109,10 +109,13 @@ const login = async (req, res) => {
 
 
 // Perfil
+// Perfil
 const profile = async (req, res) => {
     try {
-        const userId = req.params.id;
+        const userId = req.params.id; // el perfil que se quiere ver
+        const authUserId = req.user.id; // el usuario autenticado
 
+        // Buscar el perfil destino
         const userProfile = await User.findById(userId).select("-password");
         if (!userProfile) {
             return res.status(404).json({
@@ -121,14 +124,50 @@ const profile = async (req, res) => {
             });
         }
 
-        return res.status(200).json({
-            status: "success",
-            user: userProfile
-        });
+        // Si el perfil es del mismo usuario, permitir
+        if (userId === authUserId) {
+            return res.status(200).json({
+                status: "success",
+                user: userProfile
+            });
+        }
+
+        // Si el perfil es público, permitir
+        if (!userProfile.private) {
+            return res.status(200).json({
+                status: "success",
+                user: userProfile
+            });
+        }
+
+        // Si el perfil es privado → verificar seguimiento mutuo
+        const follows = await Promise.all([
+            Follow.findOne({ user: authUserId, followed: userId }),
+            Follow.findOne({ user: userId, followed: authUserId })
+        ]);
+
+        const iFollowHim = !!follows[0];
+        const heFollowsMe = !!follows[1];
+
+        if (iFollowHim && heFollowsMe) {
+            // ambos se siguen → permitir acceso
+            return res.status(200).json({
+                status: "success",
+                user: userProfile
+            });
+        } else {
+            // no se siguen mutuamente → bloquear
+            return res.status(403).json({
+                status: "forbidden",
+                message: "Este perfil es privado. Solo los seguidores mutuos pueden acceder."
+            });
+        }
+
     } catch (error) {
         return res.status(500).json({
             status: "error",
-            message: "Error al obtener el perfil"
+            message: "Error al obtener el perfil",
+            error: error.message
         });
     }
 };
@@ -301,7 +340,23 @@ const remove = async (req, res) => {
         });
     }
 };
+const searchUsers = async (req, res) => {
+    const query = req.params.query;
 
+    try {
+        // Buscar usuarios por nick o nombre que contenga el query
+        const users = await User.find({
+            $or: [
+                { nick: { $regex: query, $options: "i" } },
+                { name: { $regex: query, $options: "i" } },
+            ]
+        }).select('_id nick name image');
+
+        return res.status(200).json({ status: "success", users });
+    } catch (error) {
+        return res.status(500).json({ status: "error", message: error.message });
+    }
+};
 // Exportar
 module.exports = {
     register,
@@ -312,5 +367,6 @@ module.exports = {
     upload,
     avatar,
     counters,
-    remove
+    remove,
+    searchUsers
 };

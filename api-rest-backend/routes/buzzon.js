@@ -11,7 +11,7 @@ router.put("/:id/read", buzzonController.markAsRead);
 // Crear nueva notificación
 router.post("/", buzzonController.createBuzzon);
 
-//notificacion like
+// Contar notificaciones no leídas
 router.get("/unread/count/:userId", buzzonController.countUnreadBuzzons);
 
 module.exports = router;

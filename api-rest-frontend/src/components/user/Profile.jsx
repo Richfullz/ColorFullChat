@@ -7,7 +7,7 @@ import useAuth from '../../hooks/useAuth';
 import { PublicationList } from '../publication/PublicationList';
 
 export const Profile = () => {
-    const { auth, incrementFollowing, decrementFollowing, decrementPublications } = useAuth();
+    const { auth, incrementFollowing, decrementFollowing } = useAuth();
     const [user, setUser] = useState({});
     const params = useParams();
     const [iFollow, setIFollow] = useState(false);
@@ -15,7 +15,6 @@ export const Profile = () => {
     const [publications, setPublications] = useState([]);
     const [page, setPage] = useState(1);
     const [more, setMore] = useState(true);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -37,7 +36,18 @@ export const Profile = () => {
     }, [params.userId]);
 
     const getDataUser = async () => {
-        let dataUser = await GetProfile(params.userId, setUser);
+        const dataUser = await GetProfile(params.userId, setUser);
+
+        if (dataUser.status === "forbidden") {
+            setError("private");
+            return;
+        }
+
+        if (dataUser.status === "error") {
+            setError("error");
+            return;
+        }
+
         if (dataUser.following && dataUser.following._id) setIFollow(true);
         else setIFollow(false);
     };
@@ -71,8 +81,8 @@ export const Profile = () => {
 
         if (data.status === "success") {
             setIFollow(true);
-            incrementFollowing(); // actualizar contador global
-            setCounters(prev => ({ ...prev, following: (prev.following || 0) + 1 })); // actualizar local
+            incrementFollowing();
+            setCounters(prev => ({ ...prev, following: (prev.following || 0) + 1 }));
         }
     };
 
@@ -110,20 +120,18 @@ export const Profile = () => {
                 let newPublications = [];
 
                 if (newProfile) {
-                    // Reinicia publicaciones si es un nuevo perfil
                     newPublications = data.publications;
                 } else if (nextPage > 1) {
-                    // Acumula publicaciones de páginas siguientes sin perder anteriores
                     newPublications = [...publications, ...data.publications];
                 } else {
-                    // Primera carga o recarga inicial
                     newPublications = data.publications;
                 }
 
                 setPublications(newPublications);
-
-                // Actualiza si hay más páginas para cargar o no
                 setMore(data.pages > nextPage);
+            } else if (data.status === "forbidden") {
+                // por si también se bloquean publicaciones en backend
+                setError("private");
             }
         } catch (error) {
             console.error("Error cargando publicaciones:", error);
@@ -131,6 +139,27 @@ export const Profile = () => {
         }
     };
 
+    // 🔒 Vista para perfil privado o error
+    if (error === "private") {
+        return (
+            <div className="profile-private-msg">
+                <div className='container-profile-private'>
+                    <h2>🔒 Este perfil es privado</h2>
+                    <p>Solo los seguidores mutuos pueden ver su perfil y sus publicaciones.</p>
+                    <Link to="/social/feed" className="btn-return">Volver al inicio</Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (error === "error") {
+        return (
+            <div className="profile-error-msg">
+                <h2>⚠️ Error al cargar el perfil</h2>
+                <Link to="/social/feed" className="btn-return">Volver al inicio</Link>
+            </div>
+        );
+    }
 
     return (
         <div className='style-profile'>
@@ -201,7 +230,7 @@ export const Profile = () => {
                 </div>
             </header>
 
-            {/* Sección de publicaciones */}
+            {/* 📸 Lista de publicaciones */}
             <PublicationList
                 publications={publications}
                 setPublications={setPublications}
@@ -213,7 +242,6 @@ export const Profile = () => {
                 counters={counters}
                 setCounters={setCounters}
             />
-
         </div>
     );
 };

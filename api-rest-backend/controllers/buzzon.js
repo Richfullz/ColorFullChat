@@ -4,38 +4,60 @@ const Buzzon = require("../models/buzzon");
 const getBuzzons = async (req, res) => {
     try {
         const buzzons = await Buzzon.find({ user: req.params.userId })
-            .populate("fromUser", "_id nick name image") // populate correcto
+            .populate("fromUser", "_id nick name image")
+            .populate("relatedRequest", "_id")
             .sort({ createdAt: -1 });
+
         return res.status(200).json({ status: "success", buzzons });
     } catch (error) {
         return res.status(500).json({ status: "error", message: error.message });
     }
 };
 
-// Marcar una notificación como leída
+// Marcar notificación como leída
+// ✅ Nueva ruta para marcar como leídas cuando el usuario entra al Box
 const markAsRead = async (req, res) => {
+    const userId = req.params.id;
+
     try {
-        const buzzon = await Buzzon.findByIdAndUpdate(
-            req.params.id,
-            { read: true },
-            { new: true }
-        );
-        return res.status(200).json({ status: "success", buzzon });
+        await Follow.updateMany({ followed: userId, read: false }, { read: true });
+
+        return res.status(200).json({
+            status: "success",
+            message: "Notificaciones marcadas como leídas"
+        });
     } catch (error) {
-        return res.status(500).json({ status: "error", message: error.message });
+        return res.status(500).json({
+            status: "error",
+            message: "Error al marcar notificaciones como leídas",
+            error: error.message,
+        });
     }
 };
+
 
 // Crear nueva notificación
 const createBuzzon = async (req, res) => {
     try {
-        const buzzon = new Buzzon(req.body);
+        const buzzon = new Buzzon({
+            user: req.body.user,
+            fromUser: req.body.fromUser || null,
+            type: req.body.type || "custom",
+            actionType: req.body.actionType || "other", // friendRequest, other (actuales)
+            message: req.body.message || "Tienes una nueva notificación",
+            link: req.body.link || "",
+            publicationText: req.body.publicationText || "",
+            relatedRequest: req.body.relatedRequest || null
+        });
+
         await buzzon.save();
         return res.status(200).json({ status: "success", buzzon });
     } catch (error) {
         return res.status(500).json({ status: "error", message: error.message });
     }
 };
+
+// Contar notificaciones no leídas
 const countUnreadBuzzons = async (req, res) => {
     try {
         const count = await Buzzon.countDocuments({ user: req.params.userId, read: false });
@@ -44,6 +66,7 @@ const countUnreadBuzzons = async (req, res) => {
         return res.status(500).json({ status: "error", message: error.message });
     }
 };
+
 module.exports = {
     getBuzzons,
     markAsRead,

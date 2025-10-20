@@ -13,47 +13,39 @@ export const Nav = () => {
     const [hasNotifications, setHasNotifications] = useState(false);
     const hideNumberTimeoutRef = useRef(null);
 
-    // Guardar el timestamp de última vez que se vio la bandeja
-    const getLastSeen = () => parseInt(localStorage.getItem("lastSeenBox") || "0");
-    const setLastSeen = (timestamp) => localStorage.setItem("lastSeenBox", timestamp);
-
-    // 🔹 Obtener notificaciones no leídas
+    // 🔹 Obtener número de notificaciones no leídas
     const fetchUnreadCount = async () => {
         try {
+            if (!auth?._id) return;
+
             const token = localStorage.getItem("token") || "";
-            const lastSeen = getLastSeen();
 
-            // 🔹 Follow
-            const resFollows = await fetch(`${Global.url}follow/notifications/${auth._id}`, { headers: { Authorization: token } });
-            const dataFollows = await resFollows.json();
-            const followUnread = dataFollows.status === "success"
-                ? dataFollows.notifications.filter(n => !n.read && new Date(n.createdAt).getTime() > lastSeen).length
-                : 0;
-
-            // 🔹 Buzzon
-            const resBuzzons = await fetch(`${Global.url}buzzon/${auth._id}`, { headers: { Authorization: token } });
+            // 🔸 1️⃣ Obtener cantidad de notificaciones no leídas desde Buzzon
+            const resBuzzons = await fetch(`${Global.url}buzzon/unread/count/${auth._id}`, {
+                headers: { Authorization: token },
+            });
             const dataBuzzons = await resBuzzons.json();
-            const buzzonUnread = dataBuzzons.status === "success"
-                ? dataBuzzons.buzzons.filter(n => !n.read && new Date(n.createdAt).getTime() > lastSeen).length
-                : 0;
+            const buzzonUnread = dataBuzzons.status === "success" ? dataBuzzons.count : 0;
 
-            // 🔹 Friend requests
-            const resRequests = await fetch(`${Global.url}friend/received`, { headers: { Authorization: token } });
-            const dataRequests = await resRequests.json();
-            const requestsUnread = dataRequests.requests
-                ? dataRequests.requests.filter(r => !r.read && new Date(r.createdAt).getTime() > lastSeen).length
-                : 0;
+            // 🔸 2️⃣ (Opcional) Puedes seguir sumando otros tipos si lo necesitas
+            // const resRequests = await fetch(`${Global.url}friend/received`, {
+            //     headers: { Authorization: token },
+            // });
+            // const dataRequests = await resRequests.json();
+            // const requestsUnread = dataRequests.requests
+            //     ? dataRequests.requests.filter((r) => !r.read).length
+            //     : 0;
 
-            const totalUnread = followUnread + buzzonUnread + requestsUnread;
+            const totalUnread = buzzonUnread;
 
             setUnreadCount(totalUnread);
             setShowNumber(totalUnread > 0);
             setHasNotifications(totalUnread > 0);
 
-            // Ocultar número después de 10s
-            if (hideNumberTimeoutRef.current) clearTimeout(hideNumberTimeoutRef.current);
+            // Ocultar número después de 10s (efecto visual)
+            if (hideNumberTimeoutRef.current)
+                clearTimeout(hideNumberTimeoutRef.current);
             hideNumberTimeoutRef.current = setTimeout(() => setShowNumber(false), 10000);
-
         } catch (err) {
             console.error("Error al obtener notificaciones:", err);
             setUnreadCount(0);
@@ -62,8 +54,29 @@ export const Nav = () => {
         }
     };
 
-    // Inicializar fetch al montar y refrescar cada 15s (solo fuera de /box)
+    // 🔹 Marcar todas como leídas (cuando entra a /social/box)
+    const markAllAsRead = async () => {
+        try {
+            if (!auth?._id) return;
+            const token = localStorage.getItem("token") || "";
+
+            await fetch(`${Global.url}buzzon/markAllRead/${auth._id}`, {
+                method: "PUT",
+                headers: { Authorization: token },
+            });
+
+            setUnreadCount(0);
+            setShowNumber(false);
+            setHasNotifications(false);
+        } catch (error) {
+            console.error("Error al marcar notificaciones como leídas:", error);
+        }
+    };
+
+    // 🔹 Refrescar notificaciones cada 15s (solo fuera de /box)
     useEffect(() => {
+        if (!auth?._id) return;
+
         if (location.pathname !== "/social/box") fetchUnreadCount();
         const interval = setInterval(() => {
             if (location.pathname !== "/social/box") fetchUnreadCount();
@@ -71,21 +84,26 @@ export const Nav = () => {
 
         return () => {
             clearInterval(interval);
-            if (hideNumberTimeoutRef.current) clearTimeout(hideNumberTimeoutRef.current);
+            if (hideNumberTimeoutRef.current)
+                clearTimeout(hideNumberTimeoutRef.current);
         };
     }, [auth._id, location.pathname]);
 
-    // Manejo de la bandeja de entrada
+    // 🔹 Manejar la ruta /social/box → marcar leídas
     useEffect(() => {
+        if (!auth?._id) return;
+
         if (location.pathname === "/social/box") {
-            // Marcar todas como leídas y guardar timestamp
-            setUnreadCount(0);
-            setShowNumber(false);
-            setHasNotifications(false);
-            setLastSeen(Date.now());
-            if (hideNumberTimeoutRef.current) clearTimeout(hideNumberTimeoutRef.current);
+            markAllAsRead();
         } else {
             fetchUnreadCount();
+        }
+    }, [location.pathname]);
+
+    // 🔹 Limpiar datos locales al cerrar sesión
+    useEffect(() => {
+        if (location.pathname === "/social/logout" && auth?._id) {
+            localStorage.removeItem(`lastSeenBox_${auth._id}`);
         }
     }, [location.pathname]);
 
@@ -99,6 +117,7 @@ export const Nav = () => {
                             <span className="menu-list__title">Timeline</span>
                         </NavLink>
                     </li>
+
                     <li className="menu-list__item">
                         <NavLink to="/social/gente" className="menu-list__link">
                             <span className="menu-list__icon">👥</span>
@@ -108,11 +127,17 @@ export const Nav = () => {
 
                     {/* Bandeja con notificaciones */}
                     <li className="menu-list__item">
-                        <NavLink to="/social/box" className="menu-list__link notification-link">
+                        <NavLink
+                            to="/social/box"
+                            className="menu-list__link notification-link"
+                        >
                             <span className="menu-list__icon">📧</span>
                             <span className="menu-list__title">Bandeja</span>
                             {hasNotifications && (
-                                <span className={`notification-badge ${!showNumber ? "small" : ""}`}>
+                                <span
+                                    className={`notification-badge ${!showNumber ? "small" : ""
+                                        }`}
+                                >
                                     {showNumber ? unreadCount : ""}
                                 </span>
                             )}
@@ -129,28 +154,42 @@ export const Nav = () => {
 
                 <ul className="container-lists__list-end">
                     <li className="list-end__item">
-                        <NavLink to={"/social/perfil/" + auth._id} className="list-end__link-image">
-                            {auth.image && auth.image !== "default.png" ? (
-                                <img src={Global.url + "user/avatar/" + auth.image} className="list-end__img" alt="Imagen del perfil" />
-                            ) : (
-                                <img src={avatar} className="list-end__img" alt="Imagen del perfil" />
-                            )}
+                        <NavLink
+                            to={`/social/perfil/${auth._id}`}
+                            className="list-end__link-image"
+                        >
+                            <img
+                                src={
+                                    auth.image && auth.image !== "default.png"
+                                        ? `${Global.url}user/avatar/${auth.image}`
+                                        : avatar
+                                }
+                                className="list-end__img"
+                                alt="Imagen del perfil"
+                            />
                         </NavLink>
                     </li>
+
                     <li className="list-end__item">
-                        <NavLink className="list-end__link" to={"/social/perfil/" + auth._id}>
+                        <NavLink
+                            className="list-end__link"
+                            to={`/social/perfil/${auth._id}`}
+                        >
                             <span className="list-end__name">{auth.nick}</span>
                         </NavLink>
                     </li>
+
                     <li className="list-end__item">
                         <span className="list-end__arrow">▼</span>
                     </li>
+
                     <li className="list-end__item">
                         <NavLink className="list-end__link" to="/social/ajustes">
                             <span className="menu-list__icon">⚙️</span>
                             <span className="list-end__arrow">Ajustes</span>
                         </NavLink>
                     </li>
+
                     <li className="list-end__item">
                         <NavLink to="/social/logout" className="list-end__link">
                             <span className="menu-list__icon">🔚</span>

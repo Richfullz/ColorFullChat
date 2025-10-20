@@ -6,7 +6,8 @@ const buzzonController = require("../controllers/buzzon");
 router.get("/:userId", buzzonController.getBuzzons);
 
 // Marcar notificación como leída
-router.put("/:id/read", buzzonController.markAsRead);
+router.put("/markAllRead/:id", buzzonController.markAsRead);
+
 
 // Crear nueva notificación
 router.post("/", buzzonController.createBuzzon);

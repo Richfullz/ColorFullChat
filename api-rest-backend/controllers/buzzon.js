@@ -15,16 +15,19 @@ const getBuzzons = async (req, res) => {
 };
 
 // Marcar notificación como leída
-// ✅ Nueva ruta para marcar como leídas cuando el usuario entra al Box
 const markAsRead = async (req, res) => {
     const userId = req.params.id;
 
     try {
-        await Follow.updateMany({ followed: userId, read: false }, { read: true });
+        const result = await Buzzon.updateMany(
+            { user: userId, read: false },
+            { $set: { read: true } }
+        );
 
         return res.status(200).json({
             status: "success",
-            message: "Notificaciones marcadas como leídas"
+            message: "Todas las notificaciones marcadas como leídas",
+            updatedCount: result.modifiedCount
         });
     } catch (error) {
         return res.status(500).json({
@@ -34,6 +37,7 @@ const markAsRead = async (req, res) => {
         });
     }
 };
+
 
 
 // Crear nueva notificación
